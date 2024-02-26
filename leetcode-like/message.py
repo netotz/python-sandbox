@@ -14,37 +14,22 @@ def crop_message(message: str, max_length: int) -> str:
     if len(message) <= max_length:
         return message
 
-    words = []
-
-    first = 0
-    current_sum = 4
-    last_inserted = -1
+    last_space_pos = -1
 
     # O(n)
     for i, c in enumerate(message):
-        if c != " ":
-            continue
+        if c == " ":
+            last_space_pos = i
 
-        word_len = len(message[first:i])
-        words.append((first, word_len))
-        first = i + 1
-        last_inserted += 1
-
-        current_sum += word_len + (0 if last_inserted == 0 else 1)
-
-        if current_sum > max_length:
+        # +1 because of 0-indexing
+        # +4 because length of " ..."
+        if i + 1 + 4 > max_length:
             break
 
-    last_inserted -= 1
-
-    if last_inserted < 0:
+    if last_space_pos < 0:
         return "..."
 
-    last_word_start, last_word_len = words[last_inserted]
-    last_char_pos = last_word_start + last_word_len - 1
-    substring = message[: last_char_pos + 1]
-
-    return substring + " ..."
+    return message[:last_space_pos] + " ..."
 
 
 @pytest.mark.parametrize(
