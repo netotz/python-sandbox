@@ -28,17 +28,79 @@ going right must always be explored, but switching lanes should only be done onc
 in the binary tree this also looks like a zig-zag
 """
 
+from typing import Literal
 
-def solve(l1: list[str], l2: list[str]) -> int:
+
+SMOOTH = "."
+POTHOLE = "x"
+
+L1 = 1
+ROOT = 0
+L2 = -1
+
+
+def solve_mem(l1: list[str], l2: list[str]) -> int:
     """
+    memoization
+
+    time O(n**2)?
+
+    space O(n)
+    """
+    hashmap: dict[tuple[int, int], int] = dict()
+
+    def dfs(lane=ROOT, i=-1, currsum=0, parent_id: tuple[int, int] = (0, -1)):
+        nonlocal hashmap
+
+        if lane == ROOT:
+            return min(
+                dfs(L1, 0),
+                dfs(L2, 0),
+            )
+
+        if i >= len(l1):
+            return currsum
+
+        curr_id = (lane, i)
+        if curr_id in hashmap:
+            return hashmap[curr_id]
+
+        road = l1 if lane == L1 else l2
+        pot = 1 if road[i] == POTHOLE else 0
+        newsum = currsum + pot
+
+        go_right = dfs(lane, i + 1, newsum, curr_id)
+
+        # if last step switched lane
+        if (-lane, i) == parent_id:
+            # avoid going back by switching lane again
+            return go_right
+
+        switch_lane = dfs(-lane, i, newsum, curr_id)
+        hashmap[curr_id] = min(go_right, switch_lane)
+
+        return hashmap[curr_id]
+
+    dfs()
+
+    last = len(l1) - 1
+    minpath = min(hashmap[(l, last)] for l in (L1, L2))
+
+    # O(n)
+    total = sum(1 for l in l1 + l2 if l == POTHOLE)
+
+    # count total, subtract
+    return total - minpath
+
+
+def solve_rec(l1: list[str], l2: list[str]) -> int:
+    """
+    original recursive solution, no memory
+
     time O(2**n)
 
     space O(n)
     """
-    POTHOLE = "x"
-
-    L1 = 1
-    L2 = -1
 
     def dfs(lane: int, i=0, currsum=0, parent_id: tuple[int, int] = (0, -1)):
         if i >= len(l1):
@@ -83,4 +145,4 @@ import pytest
     ],
 )
 def test_solution(l1, l2, expected):
-    assert solve(l1, l2) == expected
+    assert solve_mem(l1, l2) == expected
